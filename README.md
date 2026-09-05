@@ -1,16 +1,35 @@
-The first part of this project is essentially good for creating a reproducible math tool (particularly a function) that takes in five inputs. 
-- The current drug mass in the stomach
-- The current drug mass in the blood
-- How fast it absorbs (ka)
-- How fast it clears out (ke)
-- Tiny slice of time (dt)
+# Stochastic Mathematical Medicine Framework: A Monte Carlo PK/PD Model
 
-How this helps is that it essentially gives us the ability to look at the human body through a multi-compartment biological model. It treats the stomach and the bloodstream as separate, connected spaces.
+## Project Overview
+This repository features an open-source computational medicine engine developed in Python to evaluate multi-dose pharmacokinetic drug accumulation across highly variable human populations. While typical pharmaceutical prescription strategies assume deterministic biology, this project utilizes **Stochastic Applied Mathematics** to profile risk thresholds under Gaussian genetic decay variance.
 
-In part - the core calculus is just two simple equations. d_stomach represents ds/dt. The drug can only leave the stomach, so its rate of change is entirely negative (-ka * s). d_blood represents db/dt.
+## The Mathematics
+The underlying architecture models human drug absorption and clearance metrics using an inter-compartmental continuous system of **Ordinary Differential Equations (ODEs)**. 
 
-The bloodstream is a dynamic system: it is simultaneously gaining drug mass from the stomach (ka * s) and losing drug mass as the kidneys filter it out (-ke *b)
+The mathematical rate of change between the stomach compartment ($S$) and the centralized bloodstream matrix ($B$) is governed by:
 
-The new_# values predict the future. It takes the current amount of drug and adds the calculated rate of change multipled by a tiny fraction of an hour (dt).
+$$\frac{dS}{dt} = -k_a S$$
 
-The end of section 1 simply just returns the values and hands them back to the main program, while ensuring concentrations never drop below zero (biologically you can't have a negative amount of chemical in your body).
+$$\frac{dB}{dt} = k_a S - k_e B$$
+
+Where:
+* $k_a$ represents the localized biological absorption rate constant.
+* $k_e$ represents the structural renal clearance/elimination rate constant.
+
+Because multi-variable calculus equations tracking continuous stacked impulses are analytically complex to resolve by hand, this framework utilizes **Euler's Numerical Method** to iteratively calculate state tracking variables over discrete time step increments ($dt = 0.01$ hours):
+
+$$S_{t+1} = S_t + \left(\frac{dS}{dt} \cdot dt\right)$$
+$$B_{t+1} = B_t + \left(\frac{dB}{dt} \cdot dt\right)$$
+
+## Statistical Monte Carlo Architecture
+To move past a single static patient profile, the engine wraps the core continuous calculus framework inside an outer **stochastic loop structure** simulating a cohort of 50 distinct individual trials simultaneously. 
+
+Biological parameter distributions are randomly drawn utilizing a Gaussian normal distribution model via NumPy:
+* $k_a \sim \mathcal{N}(\mu=1.2, \sigma=0.15)$
+* $k_e \sim \mathcal{N}(\mu=0.15, \sigma=0.03)$
+
+The multi-dimensional data array ($50 \times 2400$ metrics) is compressed through matrix axis operations to isolate cohort mean vectors, Standard Deviation boundaries ($\pm 1 \text{ STD}$ representing a 68% statistical confidence interval cloud), and localized algorithmic failure probability rates.
+
+## Core Dependencies
+* `numpy` - Multi-dimensional matrix calculations and vector optimization
+* `matplotlib` - Scientific visualization coordinate charting
