@@ -1,1 +1,147 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Part 1
+
+# The Functional Mathematics System
+def simulate_step(stomach, blood, ka, ke, dt):
+  # The Differential Equations
+  d_stomach = -ka * stomach
+  d_blood = (ka * stomach) - (ke * blood)
+
+  # Define the new concentrations using Euler's numerical method
+  new_stomach = stomach + (d_stomach * dt)
+  new_blood = blood + (d_blood * dt)
+
+  return max(0, new_stomach), max(0, new_blood)
+
+# Part 2
+
+ka = np.random.normal(loc=1.2, scale=0.15)       # Random absorption rate constant
+ke = np.random.normal(loc=0.15, scale=0.03)           # Elimination rate constant
+
+ka = max(0.1, ka)
+ke = max(0.01, ke)
+
+dt = 0.01          # Time step size (fraction of an hour)
+total_hours = 24
+time_steps = int(total_hours/dt)
+
+base_ka = 1.2
+base_ke = 0.15
+
+dose_amount = 400.0 # Mass per dose (mg)
+dose_interval = 6.0 # Frequency of administration (hours)
+
+# MULTI-PATIENT UPGRADE STRUCTURE
+num_patients = 50              # How many people to run at once
+all_patient_blood_history = []  # A big matrix layout to hold everyone's arrays
+
+# Make sure the tracker holds data for graphing later
+t_history = []
+stomach_history = []
+blood_history = []
+
+# Set the starting drug concentrations to zero
+current_stomach = 0.0
+current_blood = 0.0
+
+# The execution loop 
+for patient in range(num_patients):
+  
+  # RANDOMIZATION ENGINE: Generates unique biological rates for THIS specific patient
+  ka = np.random.normal(loc=base_ka, scale=0.15)       
+  ke = np.random.normal(loc=base_ke, scale=0.03)       
+  ka = max(0.1, ka)
+  ke = max(0.01, ke)
+
+  # Reset bodily drug mass variables to baseline zero for each new individual trial
+  current_stomach = 0.0
+  current_blood = 0.0
+  patient_blood_history = []  # Temporary tracking array for this single individual
+
+  # Inner Chronological Loop: Simulates their full day step-by-step
+  for step in range(time_steps):
+    current_time = step * dt
+
+    # Piecewise impulse tracking check: Is it dosing interval time?
+    if round(current_time, 2) % dose_interval == 0:
+      current_stomach += dose_amount
+
+    # Execute a step inside the calculus engine
+    current_stomach, current_blood = simulate_step(current_stomach, current_blood, ka, ke, dt)
+    patient_blood_history.append(current_blood)
+
+  # CRITICAL ACTION: Append this entire array history matrix into our big 50-patient cohort tracker
+  all_patient_blood_history.append(patient_blood_history)
+
+
+t_history = np.linspace(0, total_hours, time_steps)
+
+# 2. Convert your 50-patient storage list into a multi-dimensional NumPy Matrix
+data_matrix = np.array(all_patient_blood_history) # Matrix size: [50 rows x 2400 columns]
+
+# 3. STATISTICAL COMPRESSION: Compress the 50 rows to find a single cohort average timeline
+cohort_mean = np.mean(data_matrix, axis=0) # Flattens rows to find a single average curve
+cohort_std = np.std(data_matrix, axis=0)   # Calculates the standard deviation spread (variance)
+
+# 4. Extract the peak metric achieved by each individual participant
+individual_peaks = np.max(data_matrix, axis=1)
+
+# 5. Measure the mathematical risk probability (Overdose Percentage)
+toxicity_threshold = 700.0
+overdose_count = np.sum(individual_peaks > toxicity_threshold)
+overdose_rate = (overdose_count / num_patients) * 100
+
+
+
+
+plt.figure(figsize=(12,6))
+
+# =====================================================================
+# Part 4: Population Variance Visualization Engine
+# =====================================================================
+plt.figure(figsize=(12,6))
+
+# 1. Loop through and plot every single patient's tracking row faintly (low alpha)
+for i in range(num_patients):
+  plt.plot(t_history, data_matrix[i], color='blue', alpha=0.08, linewidth=1)
+
+# 2. Draw the statistical cohort mean line prominently
+plt.plot(t_history, cohort_mean, label='Cohort Mean Concentration', color='navy', linewidth=2.5)
+
+# 3. Code a shaded region tracking the 68% Confidence Interval Variance Cloud
+plt.fill_between(t_history, cohort_mean - cohort_std, cohort_mean + cohort_std, 
+                 color='blue', alpha=0.15, label='68% Variance Bound (±1 STD)')
+
+plt.axhline(y=toxicity_threshold, color='red', linestyle=':', label='Toxicity Threshold (700mg)', linewidth=1.5)
+
+plt.title('Clinical Mathematical Medicine Framework', fontsize=13, fontweight='bold')
+plt.xlabel('Time (Hours)', fontsize=12)
+plt.ylabel('Drug Mass in Bloodstream (mg)', fontsize=12)
+plt.legend(loc='upper left')
+plt.grid(True, alpha=0.2)
+plt.show()
+
+# =====================================================================
+# Part 5: Cohort Statistical Population Risk Report
+# =====================================================================
+print("\n--- COHORT CLINICAL STATISTICAL REPORT ---")
+print(f"Total Patient Population Simulated: {num_patients}")
+print(f"Average Peak Concentration Across Cohort: {np.mean(individual_peaks):.2f} mg")
+print(f"Highest Peak Observed in Population: {np.max(individual_peaks):.2f} mg")
+print(f"Lowest Peak Observed in Population: {np.min(individual_peaks):.2f} mg")
+print(f"Population Overdose Risk: {overdose_rate:.1f}% ({overdose_count} out of {num_patients} patients breached limit)")
+print("-------------------------------------------\n")
+
+
+
+
+
+
+
+
+
+
+
 
