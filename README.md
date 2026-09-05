@@ -1,7 +1,7 @@
 # Stochastic Mathematical Medicine Framework: A Monte Carlo PK/PD Model
 
 ## Project Overview
-This repository features an open-source computational medicine engine developed in Python to evaluate multi-dose pharmacokinetic drug accumulation across highly variable human populations. While typical pharmaceutical prescription strategies assume deterministic biology, this project utilizes **Stochastic Applied Mathematics** to profile risk thresholds under Gaussian genetic decay variance.
+This repository features an open-source computational medicine engine developed in Python to evaluate multi-dose pharmacokinetic drug accumulation across highly variable human populations. While typical pharmaceutical prescription strategies assume deterministic biology, this project utilizes **Stochastic Applied Mathematics** to profile risk thresholds under Gaussian genetic decay variance. This was made with supporting assistance of artificial intelligence.
 
 ## The Mathematics
 The underlying architecture models human drug absorption and clearance metrics using an inter-compartmental continuous system of **Ordinary Differential Equations (ODEs)**. 
