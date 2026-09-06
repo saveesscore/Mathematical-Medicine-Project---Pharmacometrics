@@ -134,7 +134,116 @@ print(f"Lowest Peak Observed in Population: {np.min(individual_peaks):.2f} mg")
 print(f"Population Overdose Risk: {overdose_rate:.1f}% ({overdose_count} out of {num_patients} patients breached limit)")
 print("-------------------------------------------\n")
 
+import numpy as np
+import matplotlib.pyplot as plt
 
+# =====================================================================
+# MODULE: Pharmacogenetic Stratification & Pharmacodynamic Response Engine
+# =====================================================================
+
+num_patients = 100
+total_hours = 48
+dt = 0.01
+time_steps = int(total_hours / dt)
+t_history = np.linspace(0, total_hours, time_steps)
+
+dose_amount = 350.0
+dose_interval = 8.0
+
+# Pharmacodynamic (PD) Hill Equation Parameters for Receptor Response
+E_max = 100.0   # Maximum possible biological effect (%)
+EC50 = 300.0    # Concentration required to reach 50% max effect
+hill_n = 2.5    # Hill coefficient (sigmoid steepness factor)
+toxicity_effect_threshold = 85.0 # Effect level where toxicity/adverse events trigger
+
+all_patient_effect_history = []
+metabolizer_types = []
+
+for patient in range(num_patients):
+    # PHARMACOGENETICS: Split population into genetic phenotypes for drug clearance (ke)
+    # 10% Poor Metabolizers, 80% Extensive (Normal) Metabolizers, 10% Ultra-Rapid
+    genetic_roll = np.random.rand()
+    if genetic_roll < 0.10:
+        ke = np.random.normal(loc=0.03, scale=0.005) # Very slow clearance
+        phenotype = "Poor"
+    elif genetic_roll < 0.90:
+        ke = np.random.normal(loc=0.15, scale=0.02)  # Normal clearance
+        phenotype = "Extensive"
+    else:
+        ke = np.random.normal(loc=0.40, scale=0.05)  # Extremely fast clearance
+        phenotype = "Ultra-Rapid"
+        
+    ke = max(0.01, ke)
+    ka = max(0.1, np.random.normal(loc=1.2, scale=0.15))
+    
+    stomach, blood = 0.0, 0.0
+    patient_effect = []
+    
+    for step in range(time_steps):
+        current_time = step * dt
+        if round(current_time, 2) % dose_interval == 0 and current_time < total_hours - 0.01:
+            if step == 0 or round(current_time, 2) > 0:
+                stomach += dose_amount
+        
+        # Euler PK Step
+        d_stomach = -ka * stomach
+        d_blood = (ka * stomach) - (ke * blood)
+        stomach = max(0, stomach + d_stomach * dt)
+        blood = max(0, blood + d_blood * dt)
+        
+        # PHARMACODYNAMICS (Hill Equation): Map blood concentration to biological effect %
+        # E(C) = (E_max * C^n) / (EC50^n + C^n)
+        if blood == 0:
+            effect = 0.0
+        else:
+            effect = (E_max * (blood ** hill_n)) / ((EC50 ** hill_n) + (blood ** hill_n))
+            
+        patient_effect.append(effect)
+        
+    all_patient_effect_history.append(patient_effect)
+    metabolizer_types.append(phenotype)
+
+effect_matrix = np.array(all_patient_effect_history)
+metabolizer_types = np.array(metabolizer_types)
+
+# Separate cohorts for distinct visualization of genetic impact
+poor_mask = (metabolizer_types == "Poor")
+extensive_mask = (metabolizer_types == "Extensive")
+
+mean_poor_effect = np.mean(effect_matrix[poor_mask], axis=0) if np.any(poor_mask) else np.zeros(time_steps)
+mean_extensive_effect = np.mean(effect_matrix[extensive_mask], axis=0) if np.any(extensive_mask) else np.zeros(time_steps)
+
+# Visualization: Biological Receptor Response Curves by Genetics
+plt.figure(figsize=(12, 6))
+
+# Plot individual patient curves color-coded or faded
+for i in range(num_patients):
+    color = 'crimson' if metabolizer_types[i] == "Poor" else ('dodgerblue' if metabolizer_types[i] == "Extensive" else 'forestgreen')
+    plt.plot(t_history, effect_matrix[i], color=color, alpha=0.12, linewidth=1)
+
+# Highlight phenotype averages
+if np.any(poor_mask):
+    plt.plot(t_history, mean_poor_effect, color='darkred', linewidth=2.5, label='Poor Metabolizers Mean (High Toxicity Risk)')
+if np.any(extensive_mask):
+    plt.plot(t_history, mean_extensive_effect, color='navy', linewidth=2.5, label='Extensive Metabolizers Mean')
+
+plt.axhline(y=toxicity_threshold, color='darkorange', linestyle='--', label='Adverse Effect Threshold (85% Occupancy)', linewidth=1.5)
+
+plt.title('Pharmacogenetic Stratification & Pharmacodynamic Receptor Response', fontsize=13, fontweight='bold')
+plt.xlabel('Time (Hours)', fontsize=12)
+plt.ylabel('Biological Receptor Occupancy / Effect (%)', fontsize=12)
+plt.legend(loc='upper right')
+plt.grid(True, alpha=0.2)
+plt.show()
+
+# Statistical printout
+print("\n--- PHARMACOGENETIC & PHARMACODYNAMIC REPORT ---")
+print(f"Total Cohort Size: {num_patients}")
+print(f"Poor Metabolizers Count: {np.sum(poor_mask)}")
+print(f"Extensive Metabolizers Count: {np.sum(extensive_mask)}")
+print(f"Ultra-Rapid Metabolizers Count: {np.sum(metabolizer_types == 'Ultra-Rapid')}")
+print(f"Max Receptor Occupancy Observed in Poor Metabolizers: {np.max(effect_matrix[poor_mask]):.1f}%")
+print("---------------------------------------------------\n")
 
 
 
